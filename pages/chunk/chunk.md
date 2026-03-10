@@ -47,7 +47,8 @@ If a chunk gets outside of view distance of all players it gets scheduled to be 
 
 # Spawn Chunks
 
-In the overworld, there is a 17x17 grid of chunks called the *spawn chunks*, which get loaded when the server starts, and only get unloaded when the server shuts down.
+In the overworld, there is a 16x16 to 17x17 grid of chunks called the *spawn chunks*, which get loaded when the server starts, and only get unloaded when the server shuts down.
+The exact size depends on the location of the world spawn within the chunk, it is 17 on an axis if the block position of spawn within its chunk is 8.
 
 # Loading
 

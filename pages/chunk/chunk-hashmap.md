@@ -77,6 +77,7 @@ public V put(long k, V v) {
         this.value[pos] = v;
         return oldValue;
     }
+}
 ```
 This function calls the following `insert` function.
 ```java
@@ -431,7 +432,7 @@ This slowdown makes cluster chunks a quite subtle but incredibly versatile metho
 ## Applications
 Cluster Chunks are used for:
 - Increasing the lifetime of stained glass threads in various [async chunk load setups](async-chunk-loading.md).
-- Increasing the success chances of [rehash chunk swaps](async-chunk-loading.md#rehash-chunk-swap), and increasing the number of positions in which rehash chunk swaps can be done without crashing the asnyc thread.
+- Increasing the success chances of [rehash chunk swaps](async-chunk-loading.md#rehash-chunk-swap), and increasing the number of positions in which rehash chunk swaps can be done without crashing the async thread.
 - Increasing the success chances of [unload chunk swaps](async-chunk-loading.md#unload-chunk-swap).
 - Increasing the success chances of [falling block swaps](../falling-block/falling-block-swaps.md#optimizing-chances-with-cluster-chunks).
 - Increasing the success chances of player head creation.
@@ -448,7 +449,7 @@ A superficial tutorial for this cluster finder is in [Falling Block Episode 3, a
 The cluster finder is primarily intended for [unload chunk swaps](async-chunk-loading.md#unload-chunk-swap), but can also be used for other purposes.
 
 The cluster finder takes the chunk coordinates of a *glass chunk* as input.
-It then calculates an *unload chunk* which has the same hash value as the glass chunk, and it calculates a claster whose hash values start directly after the hash value of the glass and unload chunk.
+It then calculates an *unload chunk* which has the same hash value as the glass chunk, and it calculates a cluster whose hash values start directly after the hash value of the glass and unload chunk.
 
 If one loads the unload chunk and the cluster chunks, then the glass chunk will be clustered.
 Unloading the unload chunk will shift the glass chunk from the end of the cluster to the beginning of the cluster, and this can be used for an unload chunk swap.

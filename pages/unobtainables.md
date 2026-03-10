@@ -101,6 +101,7 @@ Interesting examples are:
 - Shrubs
 - Seamless Stone Double Slabs
 - All Bark Logs
+- Unstable Tnt
 
 Falling Nether Portals can be used to create:
 - Nether Portals in the End

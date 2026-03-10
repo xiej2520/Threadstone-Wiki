@@ -151,7 +151,7 @@ All methods except for the upsize rehash chunk swap, require the main thread to 
 
 So the main thread needs to start the stained glass threads, and then needs to get to the [unload phase](../tick-phases.md#unload-phase) as quickly as possible.
 
-It is usually considered unnecessarily annoying to start the stained glass threads in the [mob spawning phase](tick-phases.md#mob-spawning), so one usually starts them in the [player phase](tick-phases.md#player-phase).
+It is usually considered unnecessarily annoying to start the stained glass threads in the [mob spawning phase](../tick-phases.md#mob-spawning), so one usually starts them in the [player phase](../tick-phases.md#player-phase).
 
 The main thread then needs to:
 - Finish the player phase
@@ -337,8 +337,8 @@ If you get no async line, fly two or three chunks away from the setup, wait two 
 
 Explanation:
 
-The main difficulty with performing an async regular load is that the `getBlockState` calls of the async thread can cancel chunk unloading.
-So to perform an async regular load, one needs to first schedule the chunk in which the async thread is running to be unloaded, and this scheduling happens in the player phase or even earlier. And then the main thread needs to get through the whole player phase, and the whole mob spawning phase and into the unload phase, all while the async thread does not do a single `getBlockState` call.
+The main difficulty with performing a regular async load is that the `getBlockState` calls of the async thread can cancel chunk unloading.
+So to perform a regular async load, one needs to first schedule the chunk in which the async thread is running to be unloaded, and this scheduling happens in the player phase or even earlier. And then the main thread needs to get through the whole player phase, and the whole mob spawning phase and into the unload phase, all while the async thread does not do a single `getBlockState` call.
 If the async thread does do a single `getBlockState` call in this time, then the scheduled chunk unloading will be cancelled, and the chunk will not get unloaded in the unload phase.
 
 Void's synchronized setup use ITT instantfalling dragon eggs to break over 1000 stained glass blocks and start over 1000 stained glass threads.
