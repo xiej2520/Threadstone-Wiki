@@ -53,7 +53,7 @@ All threads which are not part of a client are called *server threads*.
 Every time you place or break a stained glass block in minecraft, the game starts a new thread, called the *stained glass thread*.
 
 Every stained glass thread executes the following code:
-```
+```java
 public static void updateBeam(World world, BlockPos pos) {
 		HttpUtil.DOWNLOAD_THREAD_FACTORY.submit(new Runnable() {
 			@Override

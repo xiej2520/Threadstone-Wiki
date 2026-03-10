@@ -81,52 +81,52 @@ The falling end portal frame will land on the nether brick fence and survive as 
 
 # Code
 When a sand block receives a block update, it will call the `scheduleTick` method:
-```
+```java
 public void scheduleTick(BlockPos pos, Block block, int delay, int priority) {
-		Material material = block.defaultState().getMaterial();
-		if (this.doTicksImmediately && material != Material.AIR) {
-			if (block.acceptsImmediateTicks()) {
-				if (this.isAreaLoaded(pos.add(-8, -8, -8), pos.add(8, 8, 8))) {
-					BlockState blockState = this.getBlockState(pos);
-					if (blockState.getMaterial() != Material.AIR && blockState.getBlock() == block) {
-						blockState.getBlock().tick(this, pos, blockState, this.random);
-					}
-				}
+  Material material = block.defaultState().getMaterial();
+  if (this.doTicksImmediately && material != Material.AIR) {
+    if (block.acceptsImmediateTicks()) {
+      if (this.isAreaLoaded(pos.add(-8, -8, -8), pos.add(8, 8, 8))) {
+        BlockState blockState = this.getBlockState(pos);
+        if (blockState.getMaterial() != Material.AIR && blockState.getBlock() == block) {
+          blockState.getBlock().tick(this, pos, blockState, this.random);
+        }
+      }
 
-				return;
-			}
+      return;
+    }
 
-			delay = 1;
-		}
+    delay = 1;
+  }
 
-		[...]
-	}
+  [...]
+}
 ```
 The flag `doTicksImmediately` is the instant tile tick flag.
 If instant tile ticks are on, then this method will check whether the blockstate of the position is still sand.
 If the block is not sand, it will terminate the method.
 If the block at the position is still sand, it will call the `tick` method of the `FallingBlock` class.
-```
+```java
 public void tick(World world, BlockPos pos, BlockState state, Random random) {
-		if (!world.isClient) {
-			this.tryFall(world, pos);
-		}
-	}
+    if (!world.isClient) {
+        this.tryFall(world, pos);
+    }
+}
 ```
 This then immediately calls the `tryFall` method of the `FallingBlock` class.
-```
+```java
 private void tryFall(World world, BlockPos pos) {
-		if (canFallThrough(world.getBlockState(pos.down())) && pos.getY() >= 0) {
-			int i = 32;
-			if (fallImmediately || !world.isAreaLoaded(pos.add(-32, -32, -32), pos.add(32, 32, 32))) {
-				[...]
-			} else if (!world.isClient) {
-				FallingBlockEntity fallingBlockEntity = new FallingBlockEntity(world, (double)pos.getX() + 0.5, (double)pos.getY(), (double)pos.getZ() + 0.5, world.getBlockState(pos));
-				this.beforeStartFalling(fallingBlockEntity);
-				world.addEntity(fallingBlockEntity);
-			}
-		}
-	}
+    if (canFallThrough(world.getBlockState(pos.down())) && pos.getY() >= 0) {
+        int i = 32;
+        if (fallImmediately || !world.isAreaLoaded(pos.add(-32, -32, -32), pos.add(32, 32, 32))) {
+        [...]
+        } else if (!world.isClient) {
+        FallingBlockEntity fallingBlockEntity = new FallingBlockEntity(world, (double)pos.getX() + 0.5, (double)pos.getY(), (double)pos.getZ() + 0.5, world.getBlockState(pos));
+        this.beforeStartFalling(fallingBlockEntity);
+        world.addEntity(fallingBlockEntity);
+        }
+    }
+}
 ```
 At the end of this method, it does a `getBlockState` call at its own position, and then creates a falling block entity of the blockstate it found.
 

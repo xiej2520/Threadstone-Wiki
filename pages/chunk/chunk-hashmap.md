@@ -46,7 +46,7 @@ For example the chunk with the chunk coordinates -152 -15 has block coordinates 
 
 - The hash value of a chunk depends on the key of the chunk and the hashsize of the chunk hashmap.
 Using the key one first calculates the `HashCommon.mix` function.
-```
+```java
 public static final long mix(long key) {
         long h = key * -7046029254386353131L;
         h ^= h >>> 32;
@@ -67,49 +67,48 @@ When a chunk gets [loaded](chunk.md#loading), the game adds it to the chunk hash
 which happens using the following `put` function, 
 where `v` is the chunk and `k` is the key of the chunk.
 
-```
- public V put(long k, V v) {
-        int pos = this.insert(k, v);
-        if (pos < 0) {
-            return this.defRetValue;
-        } else {
-            V oldValue = this.value[pos];
-            this.value[pos] = v;
-            return oldValue;
-        }
+```java
+public V put(long k, V v) {
+    int pos = this.insert(k, v);
+    if (pos < 0) {
+        return this.defRetValue;
+    } else {
+        V oldValue = this.value[pos];
+        this.value[pos] = v;
+        return oldValue;
     }
 ```
 This function calls the following `insert` function.
-```
+```java
  private int insert(long k, V v) {
-        int pos;
-        if (k == 0L) {
-            if (this.containsNullKey) {
-                return this.n;
+    int pos;
+    if (k == 0L) {
+        if (this.containsNullKey) {
+            return this.n;
+        }
+        this.containsNullKey = true;
+        pos = this.n;
+    } else {
+        long[] key = this.key;
+        long curr;
+        if ((curr = key[pos = (int)HashCommon.mix(k) & this.mask]) != 0L) {
+            if (curr == k) {
+                return pos;
             }
-            this.containsNullKey = true;
-            pos = this.n;
-        } else {
-            long[] key = this.key;
-            long curr;
-            if ((curr = key[pos = (int)HashCommon.mix(k) & this.mask]) != 0L) {
+            while((curr = key[pos = pos + 1 & this.mask]) != 0L) {
                 if (curr == k) {
                     return pos;
                 }
-                while((curr = key[pos = pos + 1 & this.mask]) != 0L) {
-                    if (curr == k) {
-                        return pos;
-                    }
-                }
             }
         }
-        this.key[pos] = k;
-        this.value[pos] = v;
-        if (this.size++ >= this.maxFill) {
-            this.rehash(HashCommon.arraySize(this.size + 1, this.f));
-        }
-        return -1;
     }
+    this.key[pos] = k;
+    this.value[pos] = v;
+    if (this.size++ >= this.maxFill) {
+        this.rehash(HashCommon.arraySize(this.size + 1, this.f));
+    }
+    return -1;
+}
 ```
 
 The game will calculate the hash value of the chunk,
@@ -129,28 +128,28 @@ If the game wants to do anything with a chunk at a certain position, it first ne
 This happens for example every time the game does a `getBlockState` call or `setBlockState` call in the chunk.
 
 When the game tries to get a chunk from the chunk hashmap it calls the following `get` function, where `k` is the key of the chunk.
-```
+```java
 public V get(long k) {
-        if (k == 0L) {
-            return this.containsNullKey ? this.value[this.n] : this.defRetValue;
+    if (k == 0L) {
+        return this.containsNullKey ? this.value[this.n] : this.defRetValue;
+    } else {
+        long[] key = this.key;
+        long curr;
+        int pos;
+        if ((curr = key[pos = (int)HashCommon.mix(k) & this.mask]) == 0L) {
+            return this.defRetValue;
+        } else if (k == curr) {
+            return this.value[pos];
         } else {
-            long[] key = this.key;
-            long curr;
-            int pos;
-            if ((curr = key[pos = (int)HashCommon.mix(k) & this.mask]) == 0L) {
-                return this.defRetValue;
-            } else if (k == curr) {
-                return this.value[pos];
-            } else {
-                while((curr = key[pos = pos + 1 & this.mask]) != 0L) {
-                    if (k == curr) {
-                        return this.value[pos];
-                    }
+            while((curr = key[pos = pos + 1 & this.mask]) != 0L) {
+                if (k == curr) {
+                    return this.value[pos];
                 }
-                return this.defRetValue;
             }
+            return this.defRetValue;
         }
     }
+}
 ```
 It calculates the hash value of the chunk, and then tries to see whether a chunk with the correct key is at the index corresponding to the hash value.
 If it finds such a chunk it returns it. Otherwise it will look for the chunk at the next index.
@@ -162,74 +161,74 @@ This `get` method can be slowed down using [cluster chunks](#cluster-chunks).
 
 ## `remove` - Unloading Chunks <a name="remove"/>
 When a chunk gets [unloaded](chunk.md#unloading), the game calls the following `remove` function, where `k` is the key of the chunk.
-```
-  public V remove(long k) {
-        if (k == 0L) {
-            return this.containsNullKey ? this.removeNullEntry() : this.defRetValue;
+```java
+public V remove(long k) {
+    if (k == 0L) {
+        return this.containsNullKey ? this.removeNullEntry() : this.defRetValue;
+    } else {
+        long[] key = this.key;
+        long curr;
+        int pos;
+        if ((curr = key[pos = (int)HashCommon.mix(k) & this.mask]) == 0L) {
+            return this.defRetValue;
+        } else if (k == curr) {
+            return this.removeEntry(pos);
         } else {
-            long[] key = this.key;
-            long curr;
-            int pos;
-            if ((curr = key[pos = (int)HashCommon.mix(k) & this.mask]) == 0L) {
-                return this.defRetValue;
-            } else if (k == curr) {
-                return this.removeEntry(pos);
-            } else {
-                while((curr = key[pos = pos + 1 & this.mask]) != 0L) {
-                    if (k == curr) {
-                        return this.removeEntry(pos);
-                    }
+            while((curr = key[pos = pos + 1 & this.mask]) != 0L) {
+                if (k == curr) {
+                    return this.removeEntry(pos);
                 }
-                return this.defRetValue;
             }
+            return this.defRetValue;
         }
     }
+}
 ```
 
 The game first tries to find the chunk, similar to the `get` function.
 Once it finds the chunk in the chunk hashmap, it calls the `removeEntry` function, where `pos` is the index of the chunk.
 
-```
-   private V removeEntry(int pos) {
-        V oldValue = this.value[pos];
-        this.value[pos] = null;
-        --this.size;
-        this.shiftKeys(pos);
-        if (this.size < this.maxFill / 4 && this.n > 16) {
-            this.rehash(this.n / 2);
-        }
-
-        return oldValue;
+```java
+private V removeEntry(int pos) {
+    V oldValue = this.value[pos];
+    this.value[pos] = null;
+    --this.size;
+    this.shiftKeys(pos);
+    if (this.size < this.maxFill / 4 && this.n > 16) {
+        this.rehash(this.n / 2);
     }
+
+    return oldValue;
+}
 ```
 In that function it calls the `shiftKeys` function, where `pos` is the index of the chunk.
-```
-  protected final void shiftKeys(int pos) {
-        long[] key = this.key;
+```java
+protected final void shiftKeys(int pos) {
+    long[] key = this.key;
+    while(true) {
+        int last = pos;
+        pos = pos + 1 & this.mask;
+        long curr;
         while(true) {
-            int last = pos;
-            pos = pos + 1 & this.mask;
-            long curr;
-            while(true) {
-                if ((curr = key[pos]) == 0L) {
-                    key[last] = 0L;
-                    this.value[last] = null;
-                    return;
-                }
-                int slot = (int)HashCommon.mix(curr) & this.mask;
-                if (last <= pos) {
-                    if (last >= slot || slot > pos) {
-                        break;
-                    }
-                } else if (last >= slot && slot > pos) {
+            if ((curr = key[pos]) == 0L) {
+                key[last] = 0L;
+                this.value[last] = null;
+                return;
+            }
+            int slot = (int)HashCommon.mix(curr) & this.mask;
+            if (last <= pos) {
+                if (last >= slot || slot > pos) {
                     break;
                 }
-                pos = pos + 1 & this.mask;
+            } else if (last >= slot && slot > pos) {
+                break;
             }
-            key[last] = curr;
-            this.value[last] = this.value[pos];
+            pos = pos + 1 & this.mask;
         }
+        key[last] = curr;
+        this.value[last] = this.value[pos];
     }
+}
 ```
 The `shiftKeys` method removes the chunk from the chunk hashmap. It then checks whether moving any other chunk in the hashmap to the index of the removed chunk can reduce the difference between index and hash value of those chunks.
 It repeatedly moves chunks from one index to the index of the previously moved chunk, until it is no longer possible to reduce the difference between index and hash value of a chunk without increasing that of another chunk.
@@ -241,35 +240,35 @@ After it has completed the `shiftKeys` function, the chunk hashmap will check wh
 The `rehash` function changes the hashsize of the chunk hashmap to a given number `newN`.
 This `newN` is always a power of 2.
 
-```
+```java
 protected void rehash(int newN) {
-        long[] key = this.key;
-        V[] value = this.value;
-        int mask = newN - 1;
-        long[] newKey = new long[newN + 1];
-        V[] newValue = (Object[])(new Object[newN + 1]);
-        int i = this.n;
+    long[] key = this.key;
+    V[] value = this.value;
+    int mask = newN - 1;
+    long[] newKey = new long[newN + 1];
+    V[] newValue = (Object[])(new Object[newN + 1]);
+    int i = this.n;
 
-        int pos;
-        for(int j = this.realSize(); j-- != 0; newValue[pos] = value[i]) {
-            do {
-                --i;
-            } while(key[i] == 0L);
+    int pos;
+    for(int j = this.realSize(); j-- != 0; newValue[pos] = value[i]) {
+        do {
+            --i;
+        } while(key[i] == 0L);
 
-            if (newKey[pos = (int)HashCommon.mix(key[i]) & mask] != 0L) {
-                while(newKey[pos = pos + 1 & mask] != 0L) {
-                }
+        if (newKey[pos = (int)HashCommon.mix(key[i]) & mask] != 0L) {
+            while(newKey[pos = pos + 1 & mask] != 0L) {
             }
-
-            newKey[pos] = key[i];
         }
 
-        newValue[newN] = value[this.n];
-        this.n = newN;
-        this.mask = mask;
-        this.maxFill = HashCommon.maxFill(this.n, this.f);
-        this.key = newKey;
-        this.value = newValue;
+        newKey[pos] = key[i];
+    }
+
+    newValue[newN] = value[this.n];
+    this.n = newN;
+    this.mask = mask;
+    this.maxFill = HashCommon.maxFill(this.n, this.f);
+    this.key = newKey;
+    this.value = newValue;
 }
 ```
 
@@ -343,22 +342,22 @@ that replaces the old `mask` by the new mask.
 
 In the `get` method we have these lines
 
-```
- long[] key = this.key;
- long curr;
- int pos;
- if ((curr = key[pos = (int)HashCommon.mix(k) & this.mask]) == 0L) {
-      return this.defRetValue;
- } else if (k == curr) {
-      return this.value[pos];
- } else {
-      while((curr = key[pos = pos + 1 & this.mask]) != 0L) {
-           if (k == curr) {
-                 return this.value[pos];
-           }
-      }
-  return this.defRetValue;
-  }
+```java
+long[] key = this.key;
+long curr;
+int pos;
+if ((curr = key[pos = (int)HashCommon.mix(k) & this.mask]) == 0L) {
+    return this.defRetValue;
+} else if (k == curr) {
+    return this.value[pos];
+} else {
+    while((curr = key[pos = pos + 1 & this.mask]) != 0L) {
+        if (k == curr) {
+                return this.value[pos];
+        }
+    }
+return this.defRetValue;
+}
 ```
 If `this.mask` changes after the `get` method has executed the `long[] key = this.key` line, but before the `get` method has found its chunk,
 then the `get` method can access elements of the `key` array that it would usually not access,

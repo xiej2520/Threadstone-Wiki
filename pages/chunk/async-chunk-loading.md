@@ -69,7 +69,7 @@ The following methods can be used for slowing down stained glass threads:
 Beacons are particularly noteworthy, because they lead to a `synchronized` block.
 
 Every stained glass thread executes the following code:
-```
+```java
 public static void updateBeam(World world, BlockPos pos) {
 		HttpUtil.DOWNLOAD_THREAD_FACTORY.submit(new Runnable() {
 			@Override
@@ -100,7 +100,7 @@ public static void updateBeam(World world, BlockPos pos) {
 ```
 If it finds a beacon, it call the `((ServerWorld)world).submit` function, which
 calls the following code in the `MinecraftServer` class
-```
+```java
 public <V> ListenableFuture<V> submit(Callable<V> event) {
 		Validate.notNull(event);
 		if (!this.isOnSameThread() && !this.hasStopped()) {
@@ -133,7 +133,7 @@ so that the relative speed of main thread and stained glass threads remains the 
 The `synchronized` block that the beacons lead to have another use.
 
 The `MinecraftServer` class has another `synchronized (this.pendingEvents)` block at the beginning of the `tickWorlds` method
-```
+```java
 	synchronized (this.pendingEvents) {
 		while (!this.pendingEvents.isEmpty()) {
 			Utils.run(this.pendingEvents.poll(), LOGGER);
